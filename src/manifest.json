@@ -1,0 +1,37 @@
+{
+  "name": "Anki highlighter",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false,
+    "js": "options.js"
+  },
+  "description": "Anki highlighter",
+  "version": "0.0.0.1",
+  "icons": {
+    "128": "icons/icon.png"
+  },
+  "content_scripts": [{
+    "matches": [ "https://*/*" ],
+    "js": ["inject.js"],
+    "css": ["css/style.css"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }],
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "options.js",
+        "options.html",
+        "icons/icon_config.png"],
+    "matches": [ "https://*/*" ]
+    }
+  ],
+  "manifest_version": 3
+}

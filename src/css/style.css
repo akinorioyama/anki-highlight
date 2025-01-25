@@ -1,0 +1,8 @@
+    /*.speava_button {*/
+    /*    border-radius: 10px;*/
+    /*    line-height: 2.5;*/
+    /*}*/
+
+    .speava_button_active {
+        background-color: #ac2925;
+    }
