@@ -14,6 +14,7 @@ try {
 
   let text_color;
   let tab_text = [];
+  let due_days = "";
   ////////////////////////////////////////////////////////////////////////////
   // Constants
   ////////////////////////////////////////////////////////////////////////////
@@ -115,6 +116,7 @@ try {
       text_color: "#FFFFFF",
       background_color: "#000000",
       tab_text:'Default',
+      due_days: ""
     }, (items) => {
         // resolve(is_synced = true);
         is_synced = true
@@ -127,6 +129,7 @@ try {
         text_color =             items.text_color;
         background_color =       items.background_color;
         tab_text =               items.tab_text;
+        due_days =               items.due_days;
         setTextArray(tab_text);
         applyFontColor(text_color,background_color);
         applyOptionStyles();
@@ -194,17 +197,13 @@ try {
   }
 
   async function retrieve_and_show_vocabs() {
-    let targetDeckName = tab_text;
+    let targetDeckNameList = tab_text.split("\n");
+    let targetDeckName = "";
     try {
-      // 1) Get deck names and IDs
-      const decks = await ankiRequest("deckNamesAndIds",null);
-      if (!decks) {
-        alert(`Decks are not found.`);
-        return;
-      }
-
-      // 2) Find cards in the chosen deck
-      //Object.keys(decks.result)[0]
+      targetDeckNameList.forEach(DeckName => {
+        targetDeckName = DeckName;
+          }
+      )
       const cardIds = await ankiRequest("findCards", { query: `deck:${targetDeckName}` });
       if (!cardIds || cardIds.result.length === 0) {
         alert(`No cards found in deck "${targetDeckName}".`);
@@ -216,10 +215,20 @@ try {
       if (!cardsInfo || !cardsInfo.result.length) {
         alert("No card info returned.");
         return;
+      } else {
+        console.log(cardsInfo);
       }
 
       // Extract each Front field
-      const wordsToHighlight = cardsInfo.result.map(info => info.fields.Front.value);
+      let wordsToHighlight = [];
+      cardsInfo.result.forEach(cardInfo => {
+        if (due_days != ""){
+          if (cardInfo.due >= parseInt(due_days)){
+            wordsToHighlight.push(cardInfo.fields.Front.value);
+          }
+        }
+      });
+      // const wordsToHighlight = cardsInfo.result.map(info => info.fields.Front.value);
       alert("Returned cards"+wordsToHighlight)
       // 4) Highlight them in the current page
       highlightTerms(wordsToHighlight);
@@ -263,6 +272,101 @@ try {
     });
   }
 
+    async function ankiRequestConfig(action, params) {
+    let body_json;
+    if (params != null){
+      body_json = JSON.stringify({
+        action: action,
+        version: 6,
+        params: params
+      })
+    } else {
+      body_json = JSON.stringify({
+        action: action,
+        version: 6,
+      })
+    }
+    const response = await fetch("http://localhost:8765", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      // change AnkiConnect addon's permission through Addon config to set address to *
+      mode: "cors",
+      body: body_json
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+      alert("Ensure Anki and AnkiConnect are up and running. Extension failed connect to AnkiConnect")
+    } else {
+      console.log(response);
+      return response.json();
+    }
+  }
+  function reflect_deck_selections_to_text(){
+    const select_deck_area = document.getElementById('select_decks');
+    const select_deck_text = document.getElementById('tab_text');
+    const selected_deck_list = select_deck_text.value.split("\n");
+    let blank_text_entries = "";
+    for (var i = select_deck_area.children.length - 1; i >= 0; i--) {
+      if (select_deck_area.children[i].getElementsByTagName("input")[0].checked){
+          blank_text_entries = blank_text_entries + select_deck_area.children[i].getElementsByTagName("input")[0].name + "\n";
+      } else {
+
+      };
+    }
+    select_deck_text.value = blank_text_entries;
+
+
+}
+const updateDecks = () => {
+    retrieve_and_show_decks();
+}
+  async function retrieve_and_show_decks() {
+
+    try {
+      // 1) Get deck names and IDs
+      const decks = await ankiRequestConfig("deckNamesAndIds",null);
+      if (!decks) {
+        alert(`Decks are not found.`);
+        return;
+      } else {
+        const select_deck_area = document.getElementById('select_decks');
+        for (var i = select_deck_area.children.length - 1; i >= 0; i--) {
+          select_deck_area.children[0].remove();
+        }
+        const select_deck_text = document.getElementById('tab_text');
+        const selected_deck_list = select_deck_text.value.split("\n");
+        Object.entries(decks.result).forEach(deck => {
+              // speava_select_language.options.add(new Option(deck[0], deck[1]));
+              const label = document.createElement("label");
+              const checkbox = document.createElement("input");
+              checkbox.type="checkbox";
+              checkbox.id=`${deck[1]}`;
+              checkbox.name=`${deck[0]}`;
+              checkbox.onclick = function(){
+                  reflect_deck_selections_to_text();
+              }
+
+              // checkbox.onclick = function(event){
+              //     console.log(event.target.id,event.target.name,event.target.checked);
+              // }
+              const textContent = document.createTextNode(deck[0]);
+  // populate the selected deck
+              if (selected_deck_list.indexOf(`${deck[0]}`)!=-1){
+                  checkbox.checked = true;
+              } else {
+                  checkbox.checked = false;
+              }
+
+              label.appendChild(checkbox);
+              label.appendChild(textContent);
+              select_deck_area.appendChild(label);
+        });
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  }
 
 
   const open_option_dialog = () => {
@@ -278,28 +382,12 @@ try {
           dialog.oncancel = function(){
             dialog.remove();
           }
-          const update_select_language = () => {
-
-            // const speava_select_language = document.getElementById('select_language');
-            // for (var i = 0; i < langs.length; i++) {
-            //   speava_select_language.options[i] = new Option(langs[i][0], i);
-            // }
-            // Set default language / dialect.
-            // select_language.selectedIndex = 10;
-            // updateCountry();
-            // select_dialect.selectedIndex = 11;
-            //showInfo('info_start');
-          }
           const save_options = () => {
             window_positions = document.getElementById('window_positions').value;
             text_color = document.getElementById('text_color').value;
             background_color = document.getElementById('background_color').value;
             tab_text = document.getElementById('tab_text').value;
-            // var element_speava_select_language = document.getElementById('select_language');
-            // var element_speava_select_dialect = document.getElementById('select_dialect');
-            // var speava_select_language_value = langs[element_speava_select_language.options.selectedIndex];
-            // speava_select_language = element_speava_select_dialect.value;
-
+            due_days = document.getElementById('due_days').value;
             applyFontColor(text_color,background_color);
             applyOptionStyles();
             setTextArray(tab_text);
@@ -308,6 +396,7 @@ try {
               text_color: text_color,
               background_color: background_color,
               tab_text: tab_text,
+              due_days: due_days
             }, function() {
               var status = document.getElementById('status');
               status.textContent = 'Options saved.';
@@ -364,23 +453,18 @@ try {
               text_color: "#FFFFFF",
               background_color: "#000000",
               tab_text:'Default',
-              speava_select_language: 'en-US'
+              due_days: ""
             }, function(items) {
               document.getElementById('window_positions').value = items.window_positions;
               document.getElementById('text_color').value = items.text_color;
               document.getElementById('background_color').value = items.background_color;
               document.getElementById('tab_text').value = items.tab_text;
-              const item_number = list_of_codes( items.speava_select_language);
-              document.getElementById('select_language').value = item_number;
-              // updateCountry();
-              // dialect has to be set after script populats country values
-              document.getElementById('select_dialect').value = items.speava_select_language;
-
+              document.getElementById('due_days').value = items.due_days;
             });
           }
           document.body.appendChild(dialog);
           dialog.showModal();
-          update_select_language();
+          updateDecks();
           restore_options();
           document.getElementById('option_save').addEventListener('click',
             save_options);

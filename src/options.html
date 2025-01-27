@@ -14,10 +14,23 @@
 <span><textarea id="window_positions" rows="5" cols="40"></textarea></span>
 </div>
 <div>
-<span><label for="tab_text">Deck name</label></span><br>
-<span><textarea id="tab_text" rows="20" cols="80"></textarea></span>
+<span><input style="width:5%"  type="input" id="due_days"></span>
+    <span><label for="due_days">Retrieve targets by the number of days to due date</label></span>
 </div>
 
+<div id="div_decks">
+    <br>
+    <span>Select decks that you like to retrieve expressions from</span><br>
+    <span>
+        <div id="select_decks">
+        </div>
+    </span>
+</div>
+<div>
+<span><label for="tab_text">Deck name</label></span><br>
+<span><textarea id="tab_text" rows="10" cols="80"></textarea></span>
+</div>
+<button id="load_decks" onclick="updateCountry();" >load decks</button>
 <div id="status"></div>
 <button id="option_save">Save</button>
 <script src="options.js"></script>
