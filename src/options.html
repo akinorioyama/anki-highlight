@@ -30,7 +30,12 @@
 <span><label for="tab_text">Deck name</label></span><br>
 <span><textarea id="tab_text" rows="10" cols="80"></textarea></span>
 </div>
-<button id="load_decks" onclick="updateCountry();" >load decks</button>
+
+<div><span>Card list<a href="https://akinorioyama.com/word-review/help/element_position_settings" target="_blank">(?)</a><br></span>
+<span><textarea id="card_entries" rows="10" cols="40"></textarea></span>
+</div>
+
+<button id="load_decks" onclick="retrieve_and_set_vocabs();" >load decks</button>
 <div id="status"></div>
 <button id="option_save">Save</button>
 <script src="options.js"></script>

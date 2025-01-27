@@ -5,13 +5,15 @@ function save_options() {
   var background_color = document.getElementById('background_color').value;
   var tab_text = document.getElementById('tab_text').value;
   var due_days = document.getElementById('due_days').value;
+  var card_entries = document.getElementById('card_entries').value;
 
   chrome.storage.sync.set({
     window_positions: window_positions,
     text_color: text_color,
     background_color: background_color,
     tab_text: tab_text,
-    due_days: due_days
+    due_days: due_days,
+    card_entries: card_entries,
   }, function() {
     // Update status to let user know options were saved.
     var status = document.getElementById('status');
@@ -31,13 +33,15 @@ function restore_options() {
     text_color: "#FFFFFF",
     background_color: "#000000",
     tab_text:'word\tdef\tdetails\ntest\ttest def\ttest detail description',
-    due_days: ""
+    due_days: "",
+    card_entries: "",
   }, function(items) {
     document.getElementById('window_positions').value = items.window_positions;
     document.getElementById('text_color').value = items.text_color;
     document.getElementById('background_color').value = items.background_color;
     document.getElementById('tab_text').value = items.tab_text;
     document.getElementById('due_days').value = items.due_days;
+    document.getElementById('card_entries').value = items.card_entries;
   });
 }
 document.addEventListener('DOMContentLoaded', restore_options);
@@ -140,5 +144,58 @@ const updateDecks = () => {
       alert("Error: " + error.message);
     }
   }
+
+  async function retrieve_and_set_vocabs() {
+
+    const select_deck_text = document.getElementById('tab_text');
+    let due_days = document.getElementById('due_days').value;
+    const selected_deck_list = select_deck_text.value.split("\n");
+    if (selected_deck_list[selected_deck_list.length-1] ==""){
+        selected_deck_list.pop();
+    }
+    const card_entries = document.getElementById('card_entries')
+
+    let targetDeckNameList = selected_deck_list;
+    let targetDeckName = "";
+    try {
+      targetDeckNameList.forEach(DeckName => {
+        targetDeckName = DeckName;
+          }
+      )
+      const cardIds = await ankiRequestConfig("findCards", { query: `deck:${targetDeckName}` });
+      if (!cardIds || cardIds.result.length === 0) {
+        alert(`No cards found in deck "${targetDeckName}".`);
+        return;
+      }
+
+      // 3) Get detailed info for these cards
+      const cardsInfo = await ankiRequestConfig("cardsInfo", { cards: cardIds.result });
+      if (!cardsInfo || !cardsInfo.result.length) {
+        alert("No card info returned.");
+        return;
+      } else {
+        console.log(cardsInfo);
+      }
+
+      // Extract each Front field
+      let wordsToHighlight = [];
+      cardsInfo.result.forEach(cardInfo => {
+          if (due_days == "") {
+                due_days = "0";
+          }
+          if (cardInfo.due <= parseInt(due_days)|| cardInfo.due >= 1737900000  ){
+            wordsToHighlight.push(`${cardInfo.fields.Front.value};${cardInfo.cardId};${cardInfo.due};${cardInfo.deckName}`);
+          }
+
+      });
+      // const wordsToHighlight = cardsInfo.result.map(info => info.fields.Front.value);
+      alert("load complete!");
+      card_entries.value = wordsToHighlight.join("\n");
+
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  }
+
 
 updateDecks();

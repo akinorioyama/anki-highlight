@@ -21,9 +21,6 @@
     "storage",
     "activeTab"
   ],
-  "host_permissions": [
-    "http://localhost/*"
-  ],
   "web_accessible_resources": [
     {
       "resources": [
