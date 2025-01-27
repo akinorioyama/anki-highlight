@@ -305,8 +305,10 @@ async function set_card_answer(cardId) {
         if (parent.id != given_term_line[1]){
           const wrapper = document.createElement("span");
           wrapper.innerHTML = replaced;
-          wrapper.onclick = function () {
-            handleCard(given_term_line[1]);
+          wrapper.onclick = function (event) {
+            if (event.target.id == given_term_line[1]){
+              handleCard(given_term_line[1]);
+            }
           };
           parent.replaceChild(wrapper, node);
         }
